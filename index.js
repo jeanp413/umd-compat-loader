@@ -13,7 +13,7 @@ function sniffDownEmittedImport(content) {
 }
 
 function matches(arr) {
-	const allowed = [ 'require', 'exports' ];
+	const allowed = ['require', 'exports'];
 	if (arr.length !== allowed.length) return;
 	return arr.every((item, i) => allowed[i] === item.name);
 }
@@ -28,7 +28,9 @@ function isDownEmittedImportBlock(path) {
 
 function convert(content, sourceMap, amd, imports, context) {
 	let defineCall;
-	const args = {};
+	const args = {
+		parser: require("recast/parsers/babel")
+	};
 	const importsFunc = typeof imports === 'function' ? imports : (module) => module;
 
 	if (sourceMap) {
@@ -45,9 +47,9 @@ function convert(content, sourceMap, amd, imports, context) {
 				body.pop();
 				if (amd) {
 					defineCall.arguments[1] = path.node;
-					ast.program.body = [ ...body, b.expressionStatement(defineCall) ];
+					ast.program.body = [...body, b.expressionStatement(defineCall)];
 				} else {
-					ast.program.body = [ ...body, ...path.node.body.body ];
+					ast.program.body = [...body, ...path.node.body.body];
 				}
 				if (!imports || !sniffDownEmittedImport(content)) {
 					this.abort();
@@ -85,13 +87,13 @@ function convert(content, sourceMap, amd, imports, context) {
 	return ast;
 }
 
-module.exports = function(content, sourceMap) {
+module.exports = function (content, sourceMap) {
 	const options = loaderUtils.getOptions(this) || {};
 	this.cacheable && this.cacheable();
 
 	if (sniff(content)) {
 		const ast = convert(content, sourceMap, options.amd, options.imports, this.context);
-		if(sourceMap) {
+		if (sourceMap) {
 			const result = recast.print(ast, { sourceMapName: sourceMap.file });
 			const map = compose(sourceMap, result.map);
 			this.callback(null, result.code, map);
